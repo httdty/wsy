@@ -23,11 +23,11 @@ HEADERS = {
 }  # 混淆视听，伪装成一个正常的浏览器
 
 COOKIES = {
-    'SESSDATA': '13d1f356%2C1627643093%2C3df13%2A11'
+    'SESSDATA': '7eb95156%2C1627643094%2C0b77a%2A11'
 }  # 伪造cookies，完成登录
 
 SEARCH_KEYWORD_LIST = ['高一语文', '高一数学', '高一英语']
-PAGE = 1
+PAGE = 2
 
 MIN_CHAPTER_NUM = 5
 
@@ -69,7 +69,7 @@ def get_chapter_list(bv):
 
 
 def get_danmu_chapter(chapter_id):
-    print("开始处理：{}".format(chapter_id))
+    print("开始处理：{}\r".format(chapter_id))
     date_query_url_template = ['https://api.bilibili.com/x/v2/dm/history/index?type=1&oid=',
                                '&month=2020-']  # 准备url模板
     result = dict()
@@ -82,7 +82,8 @@ def get_danmu_chapter(chapter_id):
         raw_data = json.loads(r.text)  # 解析json文件
         raw_data = raw_data.get("data", [])  # 获取data
         if not raw_data:  # 无时间更久的弹幕出现
-            break  # 退出循环
+            # break  # 退出循环
+            continue  # 不退出循环，继续执行
         danmu_date_list.extend(raw_data)  # 结果汇总
     total = len(danmu_date_list)  # 获取总长度
     current = 0  # 当前正在处理的日期位次
@@ -117,7 +118,7 @@ def get_danmu(chapter_id, date):
 
 
 def danmu_save(result, save_path):
-    if result['data']:  # 结果判断
+    if len(result.keys()) > 3 or result['data']:  # 结果判断
         f = open(save_path, 'w')  # 创建文件
         json.dump(result, f, ensure_ascii=False, indent="  ")  # 存储弹幕
         f.close()  # 关闭文件
@@ -138,11 +139,15 @@ if __name__ == '__main__':
         bvs = get_course_list(search_keyword, pages=PAGE)  # 获取所有的bv
         for bvid in bvs.keys():  # 遍历bv
             print("BV号：{}\t名称：{}".format(bvid, bvs[bvid]))  # 进度提示
+            if os.path.exists(dir_path + str(bvid) + ".json") and\
+                    os.path.getsize(dir_path + str(bvid) + ".json") > 1024:  # 1024 Byte = 1 KB， 1 Byte = 8 bit
+                print("已处理过\n")
+                continue
             res[bvid] = {}  # 创建空字典
             res[bvid]['name'] = bvs[bvid]  # 设置名称
             res[bvid]['data'] = {}  # 创建data空字典
             chapter_dict = get_chapter_list(bvid)  # 获取全部chapter
-            for cid in chapter_dict.keys():  # 比那里chapter_id
-                res[bvid]['data'].update(get_danmu_chapter(cid))  # 获取该chapter的所有弹幕
+            for cid in chapter_dict.keys():  # 遍历chapter_id
+                res[bvid]['data'][cid] = get_danmu_chapter(cid)  # 获取该chapter的所有弹幕
             danmu_save(result=res[bvid], save_path=dir_path + str(bvid) + ".json")  # 保存单独bv结果
-        danmu_save(result=res, save_path=dir_path + "all.json")  # 保存全部bv结果
+        # danmu_save(result=res, save_path=dir_path + "all.json")  # 保存全部bv结果
