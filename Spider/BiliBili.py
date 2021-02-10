@@ -29,7 +29,7 @@ COOKIES = {
 SEARCH_KEYWORD_LIST = ['高一语文', '高一数学', '高一英语']
 PAGE = 2
 
-MIN_CHAPTER_NUM = 5
+MIN_CHAPTER_NUM = 3
 
 # search_keyword = '高中数学'  # 搜索关键字
 # page_num = 1  # 页码
@@ -80,6 +80,9 @@ def get_danmu_chapter(chapter_id):
         print("正在获取 {} 月的日期列表\r".format(month), end='')
         time.sleep(random.randint(2, 5))  # 暂停
         raw_data = json.loads(r.text)  # 解析json文件
+        if raw_data.get("message", '') == "请求过于频繁，请稍后再试":
+            print("日期请求过于频繁，请稍后再试")
+            input("等待处理...")  # 操作请求
         raw_data = raw_data.get("data", [])  # 获取data
         if not raw_data:  # 无时间更久的弹幕出现
             # break  # 退出循环
@@ -103,7 +106,7 @@ def get_danmu(chapter_id, date):
     url = danmu_query_template[0] + str(chapter_id) + danmu_query_template[1] + str(date)  # 拼接url
     r = requests.get(url, headers=HEADERS, cookies=COOKIES)  # 发起请求
     if len(r.text) < 100 and "请求过于频繁，请稍后再试" in r.text:  # 封号处理
-        print("请求过于频繁，请稍后再试")
+        print("弹幕请求过于频繁，请稍后再试")
         input("等待处理...")  # 操作请求
     time.sleep(random.randint(6, 8))  # 降低访问频率
     hos = ':'  # head of the sentence
@@ -140,7 +143,7 @@ if __name__ == '__main__':
         for bvid in bvs.keys():  # 遍历bv
             print("BV号：{}\t名称：{}".format(bvid, bvs[bvid]))  # 进度提示
             if os.path.exists(dir_path + str(bvid) + ".json") and\
-                    os.path.getsize(dir_path + str(bvid) + ".json") > 1024:  # 1024 Byte = 1 KB， 1 Byte = 8 bit
+                    os.path.getsize(dir_path + str(bvid) + ".json") > 2048:  # 1024 Byte = 1 KB， 1 Byte = 8 bit
                 print("已处理过\n")
                 continue
             res[bvid] = {}  # 创建空字典
